@@ -6,6 +6,7 @@ use tokio::io::AsyncWriteExt as _;
 
 pub async fn getpin(
     pinentry: &str,
+    timeout: u64,
     prompt: &str,
     desc: &str,
     err: Option<&str>,
@@ -17,8 +18,9 @@ pub async fn getpin(
         .stdout(std::process::Stdio::piped());
     // a non-zero timeout bounds how long a prompt can sit around; with
     // --timeout 0 a prompt that nobody can see (e.g. one launched against a
-    // stale tty for an ssh-agent request) would hang forever.
-    let mut args = vec!["--timeout".into(), "120".into()];
+    // stale tty for an ssh-agent request) would hang forever. configurable
+    // via the `pinentry_timeout` config option.
+    let mut args = vec!["--timeout".into(), timeout.to_string().into()];
     // only hand pinentry a --ttyname if that terminal still exists - otherwise
     // a terminal pinentry attaches to a dead tty, can't be seen or answered,
     // and busy-loops at 100% cpu. dropping the flag lets pinentry fall back to

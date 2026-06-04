@@ -30,6 +30,7 @@ pub async fn register(
             };
             let client_id = rbw::pinentry::getpin(
                 &config_pinentry().await?,
+                config_pinentry_timeout().await?,
                 "API key client__id",
                 &format!("Log in to {host}"),
                 err.as_deref(),
@@ -40,6 +41,7 @@ pub async fn register(
             .context("failed to read client_id from pinentry")?;
             let client_secret = rbw::pinentry::getpin(
                 &config_pinentry().await?,
+                config_pinentry_timeout().await?,
                 "API key client__secret",
                 &format!("Log in to {host}"),
                 err.as_deref(),
@@ -105,6 +107,7 @@ pub async fn login(
             };
             let password = rbw::pinentry::getpin(
                 &config_pinentry().await?,
+                config_pinentry_timeout().await?,
                 "Master Password",
                 &format!("Log in to {host}"),
                 err.as_deref(),
@@ -249,6 +252,7 @@ async fn two_factor(
         };
         let code = rbw::pinentry::getpin(
             &config_pinentry().await?,
+            config_pinentry_timeout().await?,
             provider.header(),
             provider.message(),
             err.as_deref(),
@@ -415,6 +419,7 @@ async fn unlock_state(
             };
             let password = rbw::pinentry::getpin(
                 &config_pinentry().await?,
+                config_pinentry_timeout().await?,
                 "Master Password",
                 &format!(
                     "Unlock the local database for '{}'",
@@ -624,6 +629,7 @@ async fn decrypt_cipher(
             };
             let password = rbw::pinentry::getpin(
                 &config_pinentry().await?,
+                config_pinentry_timeout().await?,
                 "Master Password",
                 "Accessing this entry requires the master password",
                 err.as_deref(),
@@ -816,6 +822,11 @@ async fn config_base_url() -> anyhow::Result<String> {
 async fn config_pinentry() -> anyhow::Result<String> {
     let config = rbw::config::Config::load_async().await?;
     Ok(config.pinentry)
+}
+
+async fn config_pinentry_timeout() -> anyhow::Result<u64> {
+    let config = rbw::config::Config::load_async().await?;
+    Ok(config.pinentry_timeout)
 }
 
 pub async fn subscribe_to_notifications(

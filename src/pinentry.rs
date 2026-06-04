@@ -15,8 +15,18 @@ pub async fn getpin(
     let mut opts = tokio::process::Command::new(pinentry);
     opts.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped());
-    let mut args = vec!["--timeout".into(), "0".into()];
-    if let Some(tty) = environment.tty() {
+    // a non-zero timeout bounds how long a prompt can sit around; with
+    // --timeout 0 a prompt that nobody can see (e.g. one launched against a
+    // stale tty for an ssh-agent request) would hang forever.
+    let mut args = vec!["--timeout".into(), "120".into()];
+    // only hand pinentry a --ttyname if that terminal still exists - otherwise
+    // a terminal pinentry attaches to a dead tty, can't be seen or answered,
+    // and busy-loops at 100% cpu. dropping the flag lets pinentry fall back to
+    // its own tty detection (or a graphical prompt).
+    if environment.has_usable_tty() {
+        // unwrap is safe because has_usable_tty() only returns true when a tty
+        // is present
+        let tty = environment.tty().unwrap();
         args.extend(["--ttyname".into(), tty.into()]);
     }
 

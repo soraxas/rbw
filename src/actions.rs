@@ -247,8 +247,7 @@ where
     match f(access_token.to_string()).await {
         Ok(t) => Ok((None, None, t)),
         Err(Error::RequestUnauthorized) => {
-            let (new_access, new_refresh) =
-                exchange_refresh_token_async(refresh_token).await?;
+            let (new_access, new_refresh) = exchange_refresh_token_async(refresh_token).await?;
             let t = f(new_access.clone()).await?;
             Ok((Some(new_access), new_refresh, t))
         }

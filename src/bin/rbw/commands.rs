@@ -1,7 +1,4 @@
-use std::{
-    io::Write as _, os::unix::ffi::OsStrExt as _, path::PathBuf,
-    time::SystemTime,
-};
+use std::{io::Write as _, os::unix::ffi::OsStrExt as _, path::PathBuf, time::SystemTime};
 
 use anyhow::Context as _;
 use rbw::{
@@ -21,8 +18,11 @@ impl<T> rbw::db::Encrypter<T> for RemoteEncrypter {
         entry: Option<&rbw::db::Entry<T>>,
         field: &str,
     ) -> rbw::error::Result<String> {
-        crate::actions::encrypt(field, entry.and_then(|e| e.org_id.as_deref()))
-            .map_err(|_e| rbw::error::Error::EncryptRemote)
+        crate::actions::encrypt(field, entry.and_then(|e| e.org_id.as_deref())).map_err(|e| {
+            rbw::error::Error::EncryptRemote {
+                message: format!("{e:#}"),
+            }
+        })
     }
 }
 
@@ -41,7 +41,9 @@ impl<T> rbw::db::Decrypter<T> for RemoteDecrypter {
             entry.and_then(|e| e.key.as_deref()),
             entry.and_then(|e| e.org_id.as_deref()),
         )
-        .map_err(|_e| rbw::error::Error::DecryptRemote)
+        .map_err(|e| rbw::error::Error::DecryptRemote {
+            message: format!("{e:#}"),
+        })
     }
 }
 

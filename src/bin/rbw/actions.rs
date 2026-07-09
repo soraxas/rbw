@@ -87,9 +87,7 @@ pub fn decrypt(
 
     match res {
         rbw::protocol::Response::Decrypt { plaintext } => Ok(plaintext),
-        rbw::protocol::Response::Error { error } => {
-            Err(anyhow::anyhow!("failed to decrypt: {error}"))
-        }
+        rbw::protocol::Response::Error { error } => Err(anyhow::anyhow!("{error}")),
         _ => Err(anyhow::anyhow!("unexpected message: {res:?}")),
     }
 }
@@ -102,9 +100,7 @@ pub fn encrypt(plaintext: &str, org_id: Option<&str>) -> anyhow::Result<String> 
 
     match res {
         rbw::protocol::Response::Encrypt { cipherstring } => Ok(cipherstring),
-        rbw::protocol::Response::Error { error } => {
-            Err(anyhow::anyhow!("failed to encrypt: {error}"))
-        }
+        rbw::protocol::Response::Error { error } => Err(anyhow::anyhow!("{error}")),
         _ => Err(anyhow::anyhow!("unexpected message: {res:?}")),
     }
 }

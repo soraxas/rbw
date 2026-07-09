@@ -188,16 +188,13 @@ impl TryFrom<&rbw::db::Entry<Encrypted>> for SearchEntry {
             .collect();
 
         let fields = entry
-            .decrypt_custom_fields(&mut dec)?
-            .into_iter()
-            .filter_map(|f| {
-                if f.ty == Some(rbw::api::FieldType::Hidden) {
-                    None
-                } else {
-                    f.value
-                }
-            })
-            .collect();
+            .fields
+            .iter()
+            // Hidden fields can require master password reprompt, and list/search
+            // does not display or search them, so skip them before decrypting.
+            .filter(|f| f.ty != Some(rbw::api::FieldType::Hidden))
+            .filter_map(|f| entry.decrypt_optstring(&f.value, &mut dec).transpose())
+            .collect::<rbw::error::Result<Vec<_>>>()?;
 
         let entry_type = (match &entry.data {
             rbw::db::EntryData::Login { .. } => "Login",

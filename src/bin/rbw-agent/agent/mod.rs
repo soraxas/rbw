@@ -367,8 +367,15 @@ impl Agent {
 
             tokio::select! {
                 message = nchannel.recv() => {
-                    let message = message?;
-                    self.on_notification(message).await;
+                    match message {
+                        Ok(message) => self.on_notification(message).await,
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                            log::warn!("notifications channel lagged by {n} messages");
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                            anyhow::bail!("notifications channel closed");
+                        }
+                    }
                 },
                 // TODO: The client does like a hundred connections to do basic things. Maybe it
                 // makes sense to create more comprehensive opcodes.
@@ -460,7 +467,10 @@ impl Agent {
                 self.clipboard_store(sock, text).await?;
             }
             // TODO: It's better to handle the closing more gracefully
-            rbw::protocol::Action::Quit => std::process::exit(0),
+            rbw::protocol::Action::Quit => {
+                log::info!("received quit request (environment: {environment:?}); exiting");
+                std::process::exit(0);
+            }
             rbw::protocol::Action::Version => {
                 sock.send(&rbw::protocol::Response::Version {
                     version: rbw::protocol::VERSION,

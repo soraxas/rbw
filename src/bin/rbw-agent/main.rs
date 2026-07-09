@@ -24,8 +24,12 @@ async fn async_main(startup_ack: Option<crate::daemon::StartupAck>) -> anyhow::R
     let mut sigint = signal(SignalKind::interrupt())?;
 
     tokio::select!(
-        _ = agent.run(listener) => {},
-        _ = ssh_agent.run() => {},
+        res = agent.run(listener) => {
+            log::error!("agent run loop exited unexpectedly: {res:?}");
+        },
+        res = ssh_agent.run() => {
+            log::error!("ssh agent exited unexpectedly: {res:?}");
+        },
         _ = sigint.recv() => {
             log::warn!("SIGINT received. Closing the application.");
         },
@@ -40,9 +44,25 @@ async fn async_main(startup_ack: Option<crate::daemon::StartupAck>) -> anyhow::R
 fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    let no_daemonize = std::env::args()
-        .nth(1)
-        .is_some_and(|arg| arg == "--no-daemonize");
+    let mut no_daemonize = false;
+    for arg in std::env::args().skip(1) {
+        match arg.as_str() {
+            "--no-daemonize" => no_daemonize = true,
+            "--version" | "-V" => {
+                println!("rbw-agent {}", env!("CARGO_PKG_VERSION"));
+                return Ok(());
+            }
+            "--help" | "-h" => {
+                println!("usage: rbw-agent [--no-daemonize]");
+                return Ok(());
+            }
+            _ => {
+                eprintln!("rbw-agent: unrecognized argument '{arg}'");
+                eprintln!("usage: rbw-agent [--no-daemonize]");
+                std::process::exit(2);
+            }
+        }
+    }
 
     rbw::dirs::make_all()?;
 

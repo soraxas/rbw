@@ -541,7 +541,8 @@ impl Entry<Encrypted> {
     pub fn decrypt(&self, decrypter: &mut impl Decrypter<Encrypted>) -> Result<Entry<Decrypted>> {
         // folder name should always be decrypted with the local key because
         // folders are local to a specific user's vault, not the organization
-        let folder = self.decrypt_optstring(&self.folder, decrypter)?;
+        let folder =
+            decrypter.decrypt_optfield(None::<&Entry<Encrypted>>, &self.folder.as_deref())?;
 
         let fields = self.decrypt_custom_fields(decrypter)?;
 

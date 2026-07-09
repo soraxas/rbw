@@ -177,7 +177,8 @@ impl TryFrom<&rbw::db::Entry<Encrypted>> for SearchEntry {
         };
 
         let name = entry.decrypt_string(&entry.name, &mut dec)?;
-        let folder = entry.decrypt_optstring(&entry.folder, &mut dec)?;
+        let folder =
+            dec.decrypt_optfield(None::<&rbw::db::Entry<Encrypted>>, &entry.folder.as_deref())?;
         let notes = entry.decrypt_optstring(&entry.notes, &mut dec)?;
 
         let uris = entry
